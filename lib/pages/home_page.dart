@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import 'add_task_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,6 +31,23 @@ class _HomePageState extends State<HomePage> {
     return '$day/$month/${date.year}';
   }
 
+  Future<void> _openAddTaskPage() async {
+    final newTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddTaskPage(),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (newTask != null) {
+      setState(() {
+        tasks.add(newTask);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,6 +55,11 @@ class _HomePageState extends State<HomePage> {
         title: const Text('MyTask App'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddTaskPage,
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Tugas'),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
