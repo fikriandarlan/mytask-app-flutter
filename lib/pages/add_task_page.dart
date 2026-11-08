@@ -9,8 +9,9 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
-  final _formKey = GlobalKey<FormState>();
+  static const primary = Color(0xFF3558DE);
 
+  final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _courseController = TextEditingController();
 
@@ -28,7 +29,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate: now,
+      initialDate: _selectedDeadline ?? now,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
@@ -70,62 +71,155 @@ class _AddTaskPageState extends State<AddTaskPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Tugas'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Tambah Tugas',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Judul Tugas',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Judul tugas wajib diisi';
-                  }
-                  return null;
-                },
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 650),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDF1FF),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.edit_note_rounded,
+                          color: primary,
+                          size: 32,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tugas Baru',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Lengkapi informasi tugas kuliahmu.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF66748E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  const Text(
+                    'Judul Tugas',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  TextFormField(
+                    controller: _titleController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: 'Contoh: Membuat UI Flutter',
+                      prefixIcon: Icon(
+                        Icons.assignment_outlined,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Judul tugas wajib diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Nama Mata Kuliah',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  TextFormField(
+                    controller: _courseController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      hintText: 'Contoh: Pemrograman Mobile Lanjut',
+                      prefixIcon: Icon(Icons.school_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama mata kuliah wajib diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Deadline Tugas',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  OutlinedButton.icon(
+                    onPressed: _pickDeadline,
+                    icon: const Icon(Icons.calendar_month),
+                    label: Text(
+                      _selectedDeadline == null
+                          ? 'Pilih tanggal deadline'
+                          : '${_selectedDeadline!.day}/'
+                              '${_selectedDeadline!.month}/'
+                              '${_selectedDeadline!.year}',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primary,
+                      minimumSize: const Size.fromHeight(56),
+                      side: const BorderSide(
+                        color: Color(0xFFDDE3F0),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: _saveTask,
+                    icon: const Icon(Icons.check_rounded),
+                    label: const Text(
+                      'Simpan Tugas',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Batal'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _courseController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Mata Kuliah',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Nama mata kuliah wajib diisi';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _pickDeadline,
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  _selectedDeadline == null
-                      ? 'Pilih Deadline'
-                      : '${_selectedDeadline!.day}/'
-                          '${_selectedDeadline!.month}/'
-                          '${_selectedDeadline!.year}',
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _saveTask,
-                child: const Text('Simpan Tugas'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
