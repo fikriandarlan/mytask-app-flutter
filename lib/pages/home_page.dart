@@ -48,6 +48,50 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _toggleTaskStatus(Task task) {
+    setState(() {
+      task.isCompleted = !task.isCompleted;
+    });
+  }
+
+  Future<void> _deleteTask(Task task) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Hapus Tugas'),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus "${task.title}"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    if (confirmed == true) {
+      setState(() {
+        tasks.removeWhere((item) => item.id == task.id);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tugas berhasil dihapus'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,15 +145,22 @@ class _HomePageState extends State<HomePage> {
                             'Deadline: ${formatDate(task.deadline)}',
                           ),
                           isThreeLine: true,
-                          trailing: Text(
-                            task.isCompleted ? 'Selesai' : 'Belum Selesai',
-                            style: TextStyle(
-                              color: task.isCompleted
-                                  ? Colors.green
-                                  : Colors.orange,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: task.isCompleted,
+                                onChanged: (value) {
+                                  _toggleTaskStatus(task);
+                                },
+                              ),
+                              IconButton(
+                                onPressed: () => _deleteTask(task),
+                                icon: const Icon(Icons.delete),
+                                color: Colors.red,
+                                tooltip: 'Hapus tugas',
+                              ),
+                            ],
                           ),
                         ),
                       );
