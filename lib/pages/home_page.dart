@@ -321,7 +321,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
             children: [
               const Text(
-                'Halo, Mahasiswa! 👋',
+                'Halo, Fikri Andarlan! 👋',
                 style: TextStyle(
                   fontSize: 25,
                   fontWeight: FontWeight.bold,
