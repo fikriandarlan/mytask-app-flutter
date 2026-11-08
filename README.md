@@ -1,16 +1,67 @@
-# mytask_app
 
-A new Flutter project.
+# MyTask App
 
-## Getting Started
+MyTask App adalah aplikasi sederhana berbasis Flutter
+yang digunakan untuk mencatat dan mengelola tugas kuliah
+mahasiswa.
 
-This project is a starting point for a Flutter application.
+## Teknologi
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter 3.27.2
+- Dart 3.6.1
+- Visual Studio Code
+- Google Chrome (Flutter Web)
+- Git dan GitHub
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Fitur Aplikasi
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Menampilkan daftar tugas kuliah.
+2. Menambahkan tugas baru.
+3. Mengubah status tugas menjadi Selesai.
+4. Menghapus tugas dengan konfirmasi.
+5. Melakukan validasi input yang kosong.
+6. Menampilkan antarmuka sederhana dan responsif.
+
+## Informasi Tugas
+
+Setiap tugas memiliki:
+- Judul tugas
+- Nama mata kuliah
+- Deadline
+- Status pengerjaan
+
+## Struktur Project
+
+lib/
+├── main.dart
+├── models/
+│   └── task.dart
+└── pages/
+    ├── home_page.dart
+    └── add_task_page.dart
+
+## Cara Menjalankan
+
+Pastikan Flutter SDK sudah terpasang.
+
+```bash
+flutter pub get
+flutter run -d chrome
+```
+
+## Pengujian
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Penyimpanan Data
+
+Aplikasi saat ini menggunakan state dalam memori.
+Data tugas akan kembali ke kondisi awal ketika
+aplikasi dimulai ulang.
+
+## Repository
+
+https://github.com/fikriandarlan/mytask-app-flutter
