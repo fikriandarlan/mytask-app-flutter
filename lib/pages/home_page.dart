@@ -13,6 +13,7 @@ class _HomePageState extends State<HomePage> {
   static const primary = Color(0xFF3558DE);
   static const dark = Color(0xFF18213B);
   static const muted = Color(0xFF78839A);
+  static const borderColor = Color(0xFFE9EDF5);
 
   final List<Task> tasks = [
     Task(
@@ -29,23 +30,24 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  // Mengurutkan tugas berdasarkan status dan deadline.
   List<Task> get sortedTasks {
     final sorted = List<Task>.from(tasks);
 
     sorted.sort((a, b) {
-      // Tugas belum selesai selalu berada di atas.
+      // Belum selesai selalu berada di atas.
       if (a.isCompleted != b.isCompleted) {
         return a.isCompleted ? 1 : -1;
       }
 
-      // Jika status sama, deadline terdekat di atas.
-      final deadlineComparison = a.deadline.compareTo(b.deadline);
+      // Deadline paling awal berada di atas.
+      final deadlineResult = a.deadline.compareTo(b.deadline);
 
-      if (deadlineComparison != 0) {
-        return deadlineComparison;
+      if (deadlineResult != 0) {
+        return deadlineResult;
       }
 
-      // Penentu urutan jika deadline sama.
+      // Menjaga urutan konsisten jika deadline sama.
       return a.id.compareTo(b.id);
     });
 
@@ -55,7 +57,21 @@ class _HomePageState extends State<HomePage> {
   String formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
+
     return '$day/$month/${date.year}';
+  }
+
+  bool _isOverdue(Task task) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final deadline = DateTime(
+      task.deadline.year,
+      task.deadline.month,
+      task.deadline.day,
+    );
+
+    return !task.isCompleted && deadline.isBefore(today);
   }
 
   Future<void> _openAddTaskPage() async {
@@ -84,25 +100,31 @@ class _HomePageState extends State<HomePage> {
   Future<void> _deleteTask(Task task) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus Tugas?'),
-        content: Text(
-          'Tugas "${task.title}" akan dihapus dari daftar.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Batal'),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus Tugas?'),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus "${task.title}"?',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Batal'),
             ),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
     );
 
     if (!mounted || confirmed != true) return;
@@ -118,41 +140,49 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Kartu statistik dengan lebar responsif.
   Widget _statCard(
     String label,
     int number,
     IconData icon,
     Color color,
+    double width,
   ) {
-    return Expanded(
+    return SizedBox(
+      width: width,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFFE9EDF5),
-          ),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 23),
-            const SizedBox(height: 12),
+            Icon(
+              icon,
+              color: color,
+              size: 23,
+            ),
+            const SizedBox(height: 10),
             Text(
               '$number',
               style: const TextStyle(
-                fontSize: 25,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: dark,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 2,
+              softWrap: true,
               style: const TextStyle(
                 color: muted,
-                fontSize: 11,
+                fontSize: 12,
+                height: 1.3,
               ),
             ),
           ],
@@ -161,8 +191,73 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Layout statistik menyesuaikan lebar layar.
+  Widget _buildStatistics(int completed, int pending) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 8.0;
+
+        final availableWidth = constraints.maxWidth;
+
+        // Smartphone: 2 kolom.
+        // Layar lebih lebar: 3 kolom.
+        final columns = availableWidth >= 520 ? 3 : 2;
+
+        final cardWidth = (availableWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            _statCard(
+              'Total Tugas',
+              tasks.length,
+              Icons.folder_outlined,
+              primary,
+              cardWidth,
+            ),
+            _statCard(
+              'Selesai',
+              completed,
+              Icons.check_circle_outline,
+              const Color(0xFF13865B),
+              cardWidth,
+            ),
+            _statCard(
+              'Belum Selesai',
+              pending,
+              Icons.schedule_outlined,
+              const Color(0xFFE59A28),
+              columns == 2 ? availableWidth : cardWidth,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Kartu tugas responsif.
   Widget _taskCard(Task task) {
     final done = task.isCompleted;
+    final overdue = _isOverdue(task);
+
+    final statusText = done
+        ? 'Selesai'
+        : overdue
+            ? 'Terlambat'
+            : 'Belum Selesai';
+
+    final statusBackground = done
+        ? const Color(0xFFE0F6EA)
+        : overdue
+            ? const Color(0xFFFDE8E8)
+            : const Color(0xFFFFF1DB);
+
+    final statusColor = done
+        ? const Color(0xFF13865B)
+        : overdue
+            ? const Color(0xFFC53B3B)
+            : const Color(0xFFAA711B);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -170,9 +265,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE9EDF5),
-        ),
+        border: Border.all(color: borderColor),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
@@ -188,7 +281,7 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(11),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEDF1FF),
                   borderRadius: BorderRadius.circular(13),
@@ -199,13 +292,19 @@ class _HomePageState extends State<HomePage> {
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 12),
+
+              const SizedBox(width: 10),
+
+              // Expanded mencegah teks mendorong tombol hapus.
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       task.title,
+                      maxLines: 3,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -216,6 +315,9 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 5),
                     Text(
                       task.course,
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: muted,
@@ -224,6 +326,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
+
               IconButton(
                 onPressed: () => _deleteTask(task),
                 tooltip: 'Hapus tugas',
@@ -234,12 +337,17 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 14),
+
           const Divider(
             color: Color(0xFFF0F2F7),
             height: 1,
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: 10),
+
+          // Wrap mencegah bagian bawah kartu overflow.
           Wrap(
             spacing: 10,
             runSpacing: 8,
@@ -269,18 +377,15 @@ class _HomePageState extends State<HomePage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      done ? const Color(0xFFE0F6EA) : const Color(0xFFFFF1DB),
+                  color: statusBackground,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  done ? 'Selesai' : 'Belum Selesai',
+                  statusText,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: done
-                        ? const Color(0xFF13865B)
-                        : const Color(0xFFAA711B),
+                    color: statusColor,
                   ),
                 ),
               ),
@@ -306,10 +411,56 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        vertical: 45,
+        horizontal: 20,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.task_alt_rounded,
+            color: primary,
+            size: 54,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Belum ada tugas',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+              color: dark,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Tambahkan tugas kuliah pertamamu.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: muted,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final completed = tasks.where((task) => task.isCompleted).length;
+
     final pending = tasks.length - completed;
+
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallMobile = screenWidth < 360;
 
     return Scaffold(
       appBar: AppBar(
@@ -322,7 +473,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: 20),
+            padding: EdgeInsets.only(right: 16),
             child: Icon(
               Icons.school_outlined,
               color: primary,
@@ -341,17 +492,26 @@ class _HomePageState extends State<HomePage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 650),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+            padding: EdgeInsets.fromLTRB(
+              isSmallMobile ? 12 : 20,
+              16,
+              isSmallMobile ? 12 : 20,
+              110,
+            ),
             children: [
-              const Text(
+              // Greeting
+              Text(
                 'Halo, Fikri Andarlan! 👋',
+                softWrap: true,
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: isSmallMobile ? 21 : 25,
                   fontWeight: FontWeight.bold,
                   color: dark,
                 ),
               ),
+
               const SizedBox(height: 5),
+
               const Text(
                 'Yuk, kelola tugas kuliahmu hari ini.',
                 style: TextStyle(
@@ -359,9 +519,14 @@ class _HomePageState extends State<HomePage> {
                   fontSize: 13,
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Banner produktivitas
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(
+                  isSmallMobile ? 16 : 20,
+                ),
                 decoration: BoxDecoration(
                   color: primary,
                   borderRadius: BorderRadius.circular(22),
@@ -377,7 +542,7 @@ class _HomePageState extends State<HomePage> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                              fontSize: 19,
                             ),
                           ),
                           SizedBox(height: 7),
@@ -393,41 +558,23 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Icon(
+                    const SizedBox(width: 8),
+                    Icon(
                       Icons.auto_awesome_rounded,
-                      size: 42,
-                      color: Color(0xFFFFD972),
+                      size: isSmallMobile ? 30 : 42,
+                      color: const Color(0xFFFFD972),
                     ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  _statCard(
-                    'Total Tugas',
-                    tasks.length,
-                    Icons.folder_outlined,
-                    primary,
-                  ),
-                  const SizedBox(width: 8),
-                  _statCard(
-                    'Selesai',
-                    completed,
-                    Icons.check_circle_outline,
-                    const Color(0xFF13865B),
-                  ),
-                  const SizedBox(width: 8),
-                  _statCard(
-                    'Belum Selesai',
-                    pending,
-                    Icons.schedule_outlined,
-                    const Color(0xFFE59A28),
-                  ),
-                ],
-              ),
+
+              // Statistik responsif
+              _buildStatistics(completed, pending),
+
               const SizedBox(height: 28),
+
               const Text(
                 'Daftar Tugas Kuliah',
                 style: TextStyle(
@@ -436,41 +583,22 @@ class _HomePageState extends State<HomePage> {
                   color: dark,
                 ),
               ),
+
+              const SizedBox(height: 6),
+
+              const Text(
+                'Prioritas berdasarkan status dan deadline.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: muted,
+                ),
+              ),
+
               const SizedBox(height: 14),
+
+              // Daftar diurutkan otomatis.
               if (tasks.isEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 45,
-                    horizontal: 24,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(
-                        Icons.task_alt_rounded,
-                        color: primary,
-                        size: 54,
-                      ),
-                      SizedBox(height: 12),
-                      Text(
-                        'Belum ada tugas',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Tambahkan tugas kuliah pertamamu.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted),
-                      ),
-                    ],
-                  ),
-                )
+                _buildEmptyState()
               else
                 ...sortedTasks.map(_taskCard),
             ],

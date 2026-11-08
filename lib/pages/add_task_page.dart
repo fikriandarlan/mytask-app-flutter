@@ -10,8 +10,10 @@ class AddTaskPage extends StatefulWidget {
 
 class _AddTaskPageState extends State<AddTaskPage> {
   static const primary = Color(0xFF3558DE);
+  static const dark = Color(0xFF18213B);
 
   final _formKey = GlobalKey<FormState>();
+
   final _titleController = TextEditingController();
   final _courseController = TextEditingController();
 
@@ -22,6 +24,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
     _titleController.dispose();
     _courseController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+
+    return '$day/$month/${date.year}';
   }
 
   Future<void> _pickDeadline() async {
@@ -69,51 +78,62 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallMobile = screenWidth < 360;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Tambah Tugas',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 650),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallMobile ? 12 : 20,
+              vertical: 20,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Header formulir
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEDF1FF),
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.edit_note_rounded,
                           color: primary,
                           size: 32,
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                            children: const [
                               Text(
                                 'Tugas Baru',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: dark,
                                 ),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Lengkapi informasi tugas kuliahmu.',
+                                softWrap: true,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF66748E),
@@ -125,17 +145,24 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 28),
+
+                  // Input judul
                   const Text(
                     'Judul Tugas',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
+                      color: dark,
                     ),
                   ),
+
                   const SizedBox(height: 9),
+
                   TextFormField(
                     controller: _titleController,
                     textCapitalization: TextCapitalization.sentences,
+                    maxLines: 1,
                     decoration: const InputDecoration(
                       hintText: 'Contoh: Membuat UI Flutter',
                       prefixIcon: Icon(
@@ -149,20 +176,29 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 22),
+
+                  // Input mata kuliah
                   const Text(
                     'Nama Mata Kuliah',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
+                      color: dark,
                     ),
                   ),
+
                   const SizedBox(height: 9),
+
                   TextFormField(
                     controller: _courseController,
                     textCapitalization: TextCapitalization.words,
+                    maxLines: 1,
                     decoration: const InputDecoration(
                       hintText: 'Contoh: Pemrograman Mobile Lanjut',
-                      prefixIcon: Icon(Icons.school_outlined),
+                      prefixIcon: Icon(
+                        Icons.school_outlined,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -171,23 +207,29 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 22),
+
+                  // Deadline
                   const Text(
                     'Deadline Tugas',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
+                      color: dark,
                     ),
                   ),
+
                   const SizedBox(height: 9),
+
                   OutlinedButton.icon(
                     onPressed: _pickDeadline,
-                    icon: const Icon(Icons.calendar_month),
+                    icon: const Icon(
+                      Icons.calendar_month_outlined,
+                    ),
                     label: Text(
                       _selectedDeadline == null
                           ? 'Pilih tanggal deadline'
-                          : '${_selectedDeadline!.day}/'
-                              '${_selectedDeadline!.month}/'
-                              '${_selectedDeadline!.year}',
+                          : _formatDate(_selectedDeadline!),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: primary,
@@ -200,7 +242,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 32),
+
+                  // Tombol simpan
                   ElevatedButton.icon(
                     onPressed: _saveTask,
                     icon: const Icon(Icons.check_rounded),
@@ -212,11 +257,16 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 12),
+
+                  // Tombol batal
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Batal'),
                   ),
+
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
