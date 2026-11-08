@@ -29,6 +29,29 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  List<Task> get sortedTasks {
+    final sorted = List<Task>.from(tasks);
+
+    sorted.sort((a, b) {
+      // Tugas belum selesai selalu berada di atas.
+      if (a.isCompleted != b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
+      }
+
+      // Jika status sama, deadline terdekat di atas.
+      final deadlineComparison = a.deadline.compareTo(b.deadline);
+
+      if (deadlineComparison != 0) {
+        return deadlineComparison;
+      }
+
+      // Penentu urutan jika deadline sama.
+      return a.id.compareTo(b.id);
+    });
+
+    return sorted;
+  }
+
   String formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -449,7 +472,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )
               else
-                ...tasks.map(_taskCard),
+                ...sortedTasks.map(_taskCard),
             ],
           ),
         ),
